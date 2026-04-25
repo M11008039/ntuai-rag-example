@@ -69,7 +69,40 @@ Telegram 顯示答案與來源
 2. Telegram bot token  
    在 Telegram 找 `@BotFather`，建立 bot 後取得 token。
 
-## 本機啟動
+## Docker Compose 啟動
+
+先準備 `.env`：
+
+```bash
+cp .env.example .env
+```
+
+填入 `GEMINI_API_KEY` 和 `TELEGRAM_BOT_TOKEN` 後啟動：
+
+```bash
+docker compose up -d --build
+```
+
+查看 logs：
+
+```bash
+docker compose logs -f bot
+```
+
+停止：
+
+```bash
+docker compose down
+```
+
+接著到 Telegram 打開你的 bot：
+
+1. 輸入 `/start`
+2. 第一次啟動時，bot 會自動索引 `data/uploads` 內的文件
+3. 直接詢問文件內容
+4. 也可以上傳 PDF、DOCX、TXT 或 MD 追加到知識庫
+
+## 本機啟動 (若無法使用 Docker)
 
 複製環境變數範例：
 
@@ -96,12 +129,35 @@ uv sync --dev
 uv run telegram-rag-chatbot
 ```
 
-接著到 Telegram 打開你的 bot：
+## Telegram 指令
 
-1. 輸入 `/start`
-2. 第一次啟動時，bot 會自動索引 `data/uploads` 內的文件
-3. 直接詢問文件內容
-4. 也可以上傳 PDF、DOCX、TXT 或 MD 追加到知識庫
+```text
+/start   查看簡介
+/help    查看指令
+/status  查看目前 ChromaDB chunks 數量
+/reindex 重新索引 data/uploads 內的文件
+/clear   清空向量知識庫
+```
+
+執行 `/reindex` 時，bot 會先回覆「正在重新索引，請稍等」。索引完成前如果直接提問，bot 會提醒目前正在建立索引，避免你以為它沒有反應。
+
+## 環境變數
+
+| 名稱 | 預設值 | 說明 |
+|---|---:|---|
+| `GEMINI_API_KEY` | 必填 | Gemini API key |
+| `TELEGRAM_BOT_TOKEN` | 必填 | Telegram bot token |
+| `DATA_DIR` | `data` | 資料目錄 |
+| `CHROMA_DIR` | `data/chroma` | ChromaDB 持久化位置 |
+| `UPLOAD_DIR` | `data/uploads` | Telegram 文件下載位置 |
+| `COLLECTION_NAME` | `telegram_rag` | Chroma collection 名稱 |
+| `GEMINI_CHAT_MODEL` | `gemini-2.5-flash` | 回答用 Gemini model |
+| `GEMINI_EMBEDDING_MODEL` | `models/gemini-embedding-001` | Embedding model |
+| `CHUNK_SIZE` | `1600` | 每個 chunk 的最大字元數；調大可減少 chunks、加快索引 |
+| `CHUNK_OVERLAP` | `200` | chunk 之間的重疊字元數 |
+| `RETRIEVAL_K` | `4` | 每次提問取回的 chunks 數量 |
+| `INDEX_BATCH_SIZE` | `64` | 每批寫入 ChromaDB 的 chunks 數量 |
+| `AUTO_REINDEX_ON_STARTUP` | `true` | 啟動時是否自動重建索引 |
 
 ## 可以問 Bot 的範例問題
 
@@ -155,63 +211,6 @@ Walton 在故事中扮演什麼角色？
 如果知識庫裡沒有答案，你會怎麼回答？
 請比較 Apollo 11 press kit 和 uv README 的文件類型差異。
 ```
-
-## Docker Compose 啟動
-
-先準備 `.env`：
-
-```bash
-cp .env.example .env
-```
-
-填入 `GEMINI_API_KEY` 和 `TELEGRAM_BOT_TOKEN` 後啟動：
-
-```bash
-docker compose up -d --build
-```
-
-查看 logs：
-
-```bash
-docker compose logs -f bot
-```
-
-停止：
-
-```bash
-docker compose down
-```
-
-## Telegram 指令
-
-```text
-/start   查看簡介
-/help    查看指令
-/status  查看目前 ChromaDB chunks 數量
-/reindex 重新索引 data/uploads 內的文件
-/clear   清空向量知識庫
-```
-
-執行 `/reindex` 時，bot 會先回覆「正在重新索引，請稍等」。索引完成前如果直接提問，bot 會提醒目前正在建立索引，避免你以為它沒有反應。
-
-## 環境變數
-
-| 名稱 | 預設值 | 說明 |
-|---|---:|---|
-| `GEMINI_API_KEY` | 必填 | Gemini API key |
-| `TELEGRAM_BOT_TOKEN` | 必填 | Telegram bot token |
-| `DATA_DIR` | `data` | 資料目錄 |
-| `CHROMA_DIR` | `data/chroma` | ChromaDB 持久化位置 |
-| `UPLOAD_DIR` | `data/uploads` | Telegram 文件下載位置 |
-| `COLLECTION_NAME` | `telegram_rag` | Chroma collection 名稱 |
-| `GEMINI_CHAT_MODEL` | `gemini-2.5-flash` | 回答用 Gemini model |
-| `GEMINI_EMBEDDING_MODEL` | `models/gemini-embedding-001` | Embedding model |
-| `CHUNK_SIZE` | `1600` | 每個 chunk 的最大字元數；調大可減少 chunks、加快索引 |
-| `CHUNK_OVERLAP` | `200` | chunk 之間的重疊字元數 |
-| `RETRIEVAL_K` | `4` | 每次提問取回的 chunks 數量 |
-| `INDEX_BATCH_SIZE` | `64` | 每批寫入 ChromaDB 的 chunks 數量 |
-| `AUTO_REINDEX_ON_STARTUP` | `true` | 啟動時是否自動重建索引 |
-
 
 ## 常見問題
 
