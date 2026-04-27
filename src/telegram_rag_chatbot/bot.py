@@ -220,3 +220,7 @@ async def _post_init(application: Application) -> None:
         result.raw_documents,
         result.chunks,
     )
+
+
+if __name__ == "__main__":
+    main()

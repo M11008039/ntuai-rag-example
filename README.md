@@ -117,7 +117,9 @@ GEMINI_API_KEY=你的_Gemini_API_Key
 TELEGRAM_BOT_TOKEN=你的_Telegram_Bot_Token
 ```
 
-安裝依賴：
+### 使用 uv
+
+安裝依賴與開發工具：
 
 ```bash
 uv sync --dev
@@ -127,6 +129,34 @@ uv sync --dev
 
 ```bash
 uv run telegram-rag-chatbot
+```
+
+### 使用本機 Python + pip
+
+建立並啟用虛擬環境：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+安裝依賴：
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+啟動 bot：
+
+```bash
+telegram-rag-chatbot
+```
+
+如果 shell 找不到 `telegram-rag-chatbot`，也可以使用：
+
+```bash
+python -m telegram_rag_chatbot.bot
 ```
 
 ## Telegram 指令
@@ -156,6 +186,7 @@ uv run telegram-rag-chatbot
 | `CHUNK_SIZE` | `1600` | 每個 chunk 的最大字元數；調大可減少 chunks、加快索引 |
 | `CHUNK_OVERLAP` | `200` | chunk 之間的重疊字元數 |
 | `RETRIEVAL_K` | `4` | 每次提問取回的 chunks 數量 |
+| `RELEVANCE_SCORE_THRESHOLD` | `0.55` | 低於此相關度的 chunks 會被忽略；調高可減少亂引用，調低可放寬檢索 |
 | `INDEX_BATCH_SIZE` | `64` | 每批寫入 ChromaDB 的 chunks 數量 |
 | `AUTO_REINDEX_ON_STARTUP` | `true` | 啟動時是否自動重建索引 |
 
@@ -219,7 +250,7 @@ Walton 在故事中扮演什麼角色？
 請檢查：
 
 - `.env` 裡的 `TELEGRAM_BOT_TOKEN` 是否正確
-- 是否已經執行 `uv run telegram-rag-chatbot`
+- 是否已經執行 `uv run telegram-rag-chatbot` 或在 pip 虛擬環境中執行 `telegram-rag-chatbot`
 - 如果用 Docker，執行 `docker compose logs -f bot`
 
 ### Gemini API 報錯

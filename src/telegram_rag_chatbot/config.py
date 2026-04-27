@@ -20,6 +20,7 @@ class Settings:
     chunk_size: int
     chunk_overlap: int
     retrieval_k: int
+    relevance_score_threshold: float
     index_batch_size: int
     auto_reindex_on_startup: bool
 
@@ -41,6 +42,19 @@ def _get_int(name: str, default: int) -> int:
         raise ValueError(f"{name} must be an integer") from exc
     if parsed <= 0:
         raise ValueError(f"{name} must be greater than 0")
+    return parsed
+
+
+def _get_float(name: str, default: float) -> float:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        parsed = float(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a number") from exc
+    if not 0 <= parsed <= 1:
+        raise ValueError(f"{name} must be between 0 and 1")
     return parsed
 
 
@@ -77,6 +91,7 @@ def load_settings() -> Settings:
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         retrieval_k=_get_int("RETRIEVAL_K", 4),
+        relevance_score_threshold=_get_float("RELEVANCE_SCORE_THRESHOLD", 0.55),
         index_batch_size=_get_int("INDEX_BATCH_SIZE", 64),
         auto_reindex_on_startup=_get_bool("AUTO_REINDEX_ON_STARTUP", True),
     )

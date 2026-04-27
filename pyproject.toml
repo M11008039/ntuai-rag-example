@@ -23,6 +23,11 @@ dependencies = [
 [project.scripts]
 telegram-rag-chatbot = "telegram_rag_chatbot.bot:main"
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.1",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",

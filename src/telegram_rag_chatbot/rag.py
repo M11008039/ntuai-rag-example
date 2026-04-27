@@ -29,6 +29,9 @@ class Answer:
     excerpts: list[str]
 
 
+INSUFFICIENT_INFORMATION_TEXT = "我在目前知識庫中找不到足夠資訊。"
+
+
 class RagService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -85,19 +88,19 @@ class RagService:
             return Answer(text="請輸入想詢問的問題。", sources=[], excerpts=[])
 
         with self._lock:
-            documents = self.vectorstore.similarity_search(
-                question,
-                k=self.settings.retrieval_k,
-            )
+            documents = self._retrieve_relevant_documents(question)
         if not documents:
             return Answer(
-                text="我在目前知識庫中找不到足夠資訊。請先上傳文件，或使用 /reindex 重建知識庫。",
+                text=f"{INSUFFICIENT_INFORMATION_TEXT}請先上傳相關文件，或使用 /reindex 重建知識庫。",
                 sources=[],
                 excerpts=[],
             )
 
         response = self.llm.invoke(build_prompt(question, documents))
         text = getattr(response, "content", str(response))
+        if _is_insufficient_answer(str(text)):
+            return Answer(text=INSUFFICIENT_INFORMATION_TEXT, sources=[], excerpts=[])
+
         sources = _unique_sources(documents)
         excerpts = _format_excerpts(documents)
         return Answer(text=str(text).strip(), sources=sources, excerpts=excerpts)
@@ -149,6 +152,14 @@ class RagService:
             ids = [str(uuid4()) for _ in batch]
             self.vectorstore.add_documents(batch, ids=ids)
 
+    def _retrieve_relevant_documents(self, question: str) -> list[Document]:
+        scored_documents = self.vectorstore.similarity_search_with_relevance_scores(
+            question,
+            k=self.settings.retrieval_k,
+            score_threshold=self.settings.relevance_score_threshold,
+        )
+        return [document for document, _score in scored_documents]
+
 
 def _unique_sources(documents: list[Document]) -> list[str]:
     seen: set[str] = set()
@@ -169,6 +180,10 @@ def _format_excerpts(documents: list[Document], max_chars: int = 700) -> list[st
             text = text[:max_chars].rstrip() + "..."
         excerpts.append(f"[{index}] {format_source(document)}\n{text}")
     return excerpts
+
+
+def _is_insufficient_answer(text: str) -> bool:
+    return INSUFFICIENT_INFORMATION_TEXT in text
 
 
 def list_ingestable_files(directory: Path) -> list[Path]:
